@@ -1,36 +1,68 @@
-let products = [
-  { id: 1, name: 'Laptop', category: 'Electronics', price: 800 },
-  { id: 2, name: 'Book', category: 'Education', price: 15 }
-];
+const Product = require('../models/productModel');
 
-// إنشاء منتج جديد
-exports.createProduct = (req, res) => {
-  const { name, category, price } = req.body;
-  const newProduct = { id: products.length + 1, name, category, price };
-  products.push(newProduct);
-  res.status(201).json(newProduct);
+// جلب كل المنتجات
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    return res.status(200).json(products);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching products', error: error.message });
+  }
 };
 
-// تحديث منتج موجود
-exports.updateProduct = (req, res) => {
-  const { id } = req.params;
-  const product = products.find(p => p.id === parseInt(id));
-  if (!product) return res.status(404).json({ message: 'Product not found' });
+// جلب منتج واحد
+exports.getSingleProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    return res.status(200).json(product);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching product', error: error.message });
+  }
+};
 
-  const { name, category, price } = req.body;
-  product.name = name || product.name;
-  product.category = category || product.category;
-  product.price = price || product.price;
+// إنشاء منتج جديد
+exports.createProduct = async (req, res) => {
+  try {
+    const { name, price, description } = req.body;
 
-  res.json(product);
+    // التحقق من الحقول المطلوبة
+    if (!name || !price) {
+      return res.status(400).json({ message: 'Name and price are required' });
+    }
+
+    const newProduct = await Product.create({ name, price, description });
+    return res.status(201).json(newProduct);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error creating product', error: error.message });
+  }
+};
+
+// تحديث منتج
+exports.updateProduct = async (req, res) => {
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updatedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    return res.status(200).json(updatedProduct);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating product', error: error.message });
+  }
 };
 
 // حذف منتج
-exports.deleteProduct = (req, res) => {
-  const { id } = req.params;
-  const index = products.findIndex(p => p.id === parseInt(id));
-  if (index === -1) return res.status(404).json({ message: 'Product not found' });
 
-  const deleted = products.splice(index, 1);
-  res.json({ message: 'Product deleted', deleted });
+exports.deleteProduct = async (req, res) => {
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    if (!deletedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    return res.status(200).json({ message: 'Product deleted successfully', deletedProduct });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error deleting product', error: error.message });
+  }
 };
