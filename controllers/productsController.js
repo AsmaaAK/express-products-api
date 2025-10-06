@@ -27,16 +27,15 @@ exports.getSingleProduct = async (req, res) => {
 exports.createProduct = async (req, res) => {
   try {
     const { name, price, description } = req.body;
-
-    // التحقق من الحقول المطلوبة
-    if (!name || !price) {
-      return res.status(400).json({ message: 'Name and price are required' });
-    }
-
     const newProduct = await Product.create({ name, price, description });
-    return res.status(201).json(newProduct);
+
+   
+    const io = req.app.get('io');
+    io.emit('newProduct', newProduct); 
+
+    res.status(201).json(newProduct);
   } catch (error) {
-    return res.status(500).json({ message: 'Error creating product', error: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
